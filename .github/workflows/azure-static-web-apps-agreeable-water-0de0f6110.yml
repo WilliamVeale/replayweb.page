@@ -29,7 +29,13 @@ jobs:
         run: yarn install --frozen-lockfile
       
       - name: Build web assets only
-        run: yarn build-web
+        run: |
+          yarn build-web
+          # Ensure dist-web directory exists and copy adblock files
+          mkdir -p dist-web/adblock
+          if [ -f adblock/adblock.gz ]; then
+            cp adblock/adblock.gz dist-web/adblock/
+          fi
       
       - name: Build And Deploy
         id: builddeploy
@@ -40,9 +46,9 @@ jobs:
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
+          app_location: "dist-web" # App source code path
           api_location: "" # Api source code path - optional
-          output_location: "dist-web" # Built app content directory - optional
+          output_location: "" # Built app content directory - optional
           skip_app_build: true # Skip Oryx build since we build manually
           ###### End of Repository/Build Configurations ######
 
