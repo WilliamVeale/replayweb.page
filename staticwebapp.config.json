@@ -1,0 +1,23 @@
+{
+  "platform": {
+    "apiRuntime": "node:20"
+  },
+  "routes": [
+    {
+      "route": "/*",
+      "serve": "/index.html",
+      "statusCode": 200
+    }
+  ],
+  "mimeTypes": {
+    ".wasm": "application/wasm",
+    ".warc": "application/warc",
+    ".warc.gz": "application/gzip",
+    ".wacz": "application/zip",
+    ".har": "application/json"
+  },
+  "globalHeaders": {
+    "Cross-Origin-Embedder-Policy": "credentialless",
+    "Cross-Origin-Opener-Policy": "same-origin"
+  }
+}
