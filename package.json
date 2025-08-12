@@ -92,6 +92,7 @@
   ],
   "scripts": {
     "build": "webpack --mode production && ./adblock/fetch-adblock.sh",
+    "build-web": "webpack --config webpack.web.config.js --mode production && ./adblock/fetch-adblock.sh",
     "build-dev": "webpack --mode development",
     "build-docs": "yarn run build && cd mkdocs && ./copy-site.sh && mkdocs build",
     "start-prod": "serve -l 9990 --cors",

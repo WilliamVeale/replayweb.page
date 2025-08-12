@@ -135,7 +135,7 @@ const libConfig = (env, argv) => {
       outputModule: true,
     },
 
-    devtool: argv.mode === "production" ? undefined : "source-map",
+    devtool: false, // Disable source maps to reduce bundle size
 
     plugins: [
       new webpack.NormalModuleReplacementPlugin(/^node:*/, (resource) => {

@@ -1,0 +1,149 @@
+/* eslint-env node */
+/* eslint @typescript-eslint/no-var-requires: "off" */
+
+const path = require("path");
+const webpack = require("webpack");
+const { merge } = require("webpack-merge");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
+const package_json = require("./package.json");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+
+// helper proxy URL, run locally for app
+const HELPER_PROXY = "https://helper-proxy.webrecorder.workers.dev";
+
+// GDrive client-id
+const GDRIVE_CLIENT_ID =
+  "160798412227-tko4c82uopud11q105b2lvbogsj77hlg.apps.googleusercontent.com";
+
+const GDRIVE_API = "https://apis.google.com/js/platform.js";
+
+// Copyright banner text
+const BANNER_TEXT = `'[name].js is part of ReplayWeb.page (https://replayweb.page) Copyright (C) 2020-${new Date().getFullYear()}, Webrecorder Software. Licensed under the Affero General Public License v3.'`;
+
+/** @type {import("webpack").Configuration['optimization']} */
+const optimization = {
+  minimize: true,
+  minimizer: [
+    new TerserPlugin({
+      extractComments: false,
+    }),
+  ],
+};
+
+/** @type {import("webpack").Configuration} */
+const tsConfig = {
+  resolve: {
+    extensions: [".ts", ".js"],
+    plugins: [new TsconfigPathsPlugin()],
+  },
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        loader: "ts-loader",
+        include: path.resolve(__dirname, "src"),
+        options: {
+          onlyCompileBundledFiles: true,
+          compilerOptions: {
+            declaration: false, // Disable .d.ts generation
+            declarationMap: false, // Disable .d.ts.map generation
+          },
+        },
+      },
+    ],
+  },
+};
+
+const webConfig = () => {
+  /** @type {import('webpack').Configuration['entry']} */
+  const entry = {
+    ui: "./src/index.ts",
+  };
+
+  const extraPlugins = [];
+
+  const patterns = [
+    { from: "node_modules/@webrecorder/wabac/dist/sw.js", to: "sw.js" },
+    { from: "index.html", to: "index.html" },
+    { from: "embed.html", to: "embed.html" },
+    { from: "404.html", to: "404.html" },
+    { from: "webmanifest.json", to: "webmanifest.json" },
+    { from: "favicons", to: "favicons" },
+    { from: "ruffle", to: "ruffle" },
+    { from: "staticwebapp.config.json", to: "staticwebapp.config.json" },
+  ];
+  extraPlugins.push(new CopyPlugin({ patterns }));
+
+  /** @type {import('webpack').Configuration} */
+  const config = {
+    target: "web",
+    mode: "production",
+    cache: {
+      type: "filesystem",
+    },
+    resolve: {
+      fallback: { crypto: false },
+    },
+    entry,
+    optimization,
+    output: {
+      path: path.join(__dirname, "dist-web"),
+      filename: "[name].js",
+      libraryTarget: "self",
+      globalObject: "self",
+      publicPath: "/",
+      clean: true, // Clean output directory before build
+    },
+
+    devtool: false, // No source maps for deployment
+
+    plugins: [
+      new webpack.NormalModuleReplacementPlugin(/^node:*/, (resource) => {
+        switch (resource.request) {
+          case "node:stream":
+            resource.request = "stream-browserify";
+            break;
+        }
+      }),
+
+      new webpack.optimize.LimitChunkCountPlugin({
+        maxChunks: 1,
+      }),
+      new webpack.ProvidePlugin({
+        process: "process/browser",
+      }),
+      new MiniCssExtractPlugin(),
+      new webpack.DefinePlugin({
+        __SW_NAME__: JSON.stringify("sw.js"),
+        __HELPER_PROXY__: JSON.stringify(HELPER_PROXY),
+        __GDRIVE_CLIENT_ID__: JSON.stringify(GDRIVE_CLIENT_ID),
+        __GDRIVE_API__: JSON.stringify(GDRIVE_API),
+        __VERSION__: JSON.stringify(package_json.version),
+      }),
+      new webpack.BannerPlugin(BANNER_TEXT),
+      ...extraPlugins,
+    ],
+
+    module: {
+      rules: [
+        {
+          test: /\.svg$/,
+          use: ["raw-loader"],
+        },
+        {
+          test: /main.scss$/,
+          use: ["css-loader", "sass-loader"],
+        },
+        {
+          test: /wombat.js|wombatWorkers.js|index.html$/i,
+          use: ["raw-loader"],
+        },
+      ],
+    },
+  };
+  return merge(tsConfig, config);
+};
+
+module.exports = webConfig;
