@@ -46,10 +46,6 @@ const tsConfig = {
         include: path.resolve(__dirname, "src"),
         options: {
           onlyCompileBundledFiles: true,
-          compilerOptions: {
-            declaration: false, // Disable .d.ts generation
-            declarationMap: false, // Disable .d.ts.map generation
-          },
         },
       },
     ],
